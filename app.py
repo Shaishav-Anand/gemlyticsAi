@@ -340,7 +340,7 @@ for name, fc in results.items():
 
 # ====== AI Insights Section ======
 if metrics and results:
-    st.subheader("🤖 AI Insights")
+    st.subheader("🤖 AI Analytics")
 
     try:
         # Convert metrics + results to readable text
@@ -378,7 +378,7 @@ user_query = st.text_input("Ask anything about your data, forecast, trends, risk
 
 if user_query:
     ai_answer = chat_with_ai(user_query, context=chat_context)
-    st.markdown("### 🤖 AI Answer")
+    st.markdown("### 🤖 Reply")
     st.write(ai_answer)
 
 
@@ -449,4 +449,5 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
