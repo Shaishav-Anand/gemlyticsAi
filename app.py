@@ -59,12 +59,57 @@ def finalize_forecast(df_out):
             df[c] = pd.to_numeric(df[c], errors='coerce').round().fillna(0).astype(int)
     return df
 
-st.set_page_config(layout="wide", page_title="Gemlytics AI")
-st.image("logo.png", width=220)
+st.set_page_config(layout="wide", page_title="Datalytics AI")
+
+# ====== Hide only Streamlit menu & footer, keep sidebar header =====
+hide_st_style = """
+    <style>
+    .st-emotion-cache-99anic:hover:enabled{
+    background-color:#a100ff !important;
+    }
+    .st-emotion-cache-zh2fnc,.st-emotion-cache-zh2fnc{
+    width:70%;
+    margin:auto;
+    }
+    .st-emotion-cache-1vo6xi6{
+    width:70%;
+    margin:auto;
+    }
+    .st-emotion-cache-uwwqev{
+    margin-bottom:55px;
+    }
+    .st-emotion-cache-1j22a0y{
+    margin-top:26px !important;
+    }
+    .st-emotion-cache-1ffuo7c{
+    width:5% !important;
+    }
+    .st-emotion-cache-scp8yw{
+    display:none !important
+    }
+    .st-emotion-cache-zy6yx3{
+    padding-top :1em !important;
+    padding-bottom: 5em !important;
+    }
+    .st-dl{
+    background-color:#a100ff !important;
+    }
+    .st-el {
+    background-color: #a100ff !important;
+    }
+    #MainMenu {visibility: hidden;}   /* Hides the top hamburger menu */
+    footer {visibility: hidden;}     /* Hides the footer */
+    /* header {visibility: hidden;} */ /* Don't hide header to keep sidebar title visible */
+    </style>
+"""
+st.markdown(hide_st_style, unsafe_allow_html=True)
+st.sidebar.markdown("## ⚙️ Settings")
+st.image("image.png", width=220)
 
 
 uploaded = st.file_uploader("Upload CSV", type="csv")
 if not uploaded:
+    st.info("Data Format: date, store_id, SKU_ID, units_sold, inventory_on_hand, price, promotion_flag")
     st.stop()
 
 df = pd.read_csv(uploaded)
@@ -104,15 +149,15 @@ ts['price'] = ts['price'].fillna(method='ffill').fillna(method='bfill').fillna(0
 ts['promotion_flag'] = ts['promotion_flag'].fillna(0).astype(int)
 
 forecast_horizon = st.sidebar.number_input(
-    "Horizon",
+    "Days",
     min_value=7,
     max_value=30,
     value=30,
     step=1
 )
 
-add_price_reg = st.sidebar.checkbox("Prophet regressor: price", True)
-add_prom_reg = st.sidebar.checkbox("Prophet regressor: promotion", True)
+add_price_reg = st.sidebar.checkbox("Price", True)
+add_prom_reg = st.sidebar.checkbox("Promotion", True)
 us_prophet = st.sidebar.checkbox("Use Prophet", True)
 us_xgb = st.sidebar.checkbox("Use XGBoost", True if XGB_AVAILABLE else False)
 
@@ -298,9 +343,62 @@ if results:
     plot_df = pd.merge(actual, pr[['ds','yhat']], on='ds', how='outer').sort_values('ds')
     plot_df = plot_df.dropna(subset=['ds'])
 
-    plt.figure(figsize=(10,4))
-    plt.plot(plot_df['ds'], plot_df['y'], label='Actual')
-    plt.plot(plot_df['ds'], plot_df['yhat'], label=plot_choice)
-    plt.legend()
-    st.pyplot(plt)
+    # ===== New Plots: Pie + Bar side by side =====
+    fig, axes = plt.subplots(1, 2, figsize=(12,5))
 
+    # Bar chart: Actual vs Forecast for last 10 days
+    # Bar chart: Actual vs Forecast for last 10 days
+    last_n = 10
+    plot_df_bar = plot_df.tail(last_n)
+    x = np.arange(len(plot_df_bar))
+
+    width = 0.4
+    axes[0].bar(x - width/2, plot_df_bar['y'], width=width, label='Actual', alpha=0.7)
+    axes[0].bar(x + width/2, plot_df_bar['yhat'], width=width, label='Forecast', alpha=0.7)
+    axes[0].set_title(f'Actual vs Forecast (Last {last_n} Days)')
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(plot_df_bar['ds'].dt.strftime('%Y-%m-%d'), rotation=45)
+    axes[0].legend()
+
+
+    # Pie chart: Total Actual vs Forecast
+    total_actual = plot_df['y'].sum()
+    total_forecast = plot_df['yhat'].sum()
+    axes[1].pie([total_actual, total_forecast], labels=['Actual','Forecast'], autopct='%1.1f%%', colors=['#1f77b4','#ff7f0e'])
+    axes[1].set_title('Total Actual vs Forecast')
+
+    plt.tight_layout()
+    st.pyplot(fig)
+
+
+st.markdown(
+    """
+    <style>
+    .footer {
+        
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #f5f5f5;
+        color: #555;
+        text-align: center;
+        padding: 8px 0;
+        font-size: 14px;
+        font-family: 'Arial', sans-serif;
+        box-shadow: 0 -1px 5px rgba(0,0,0,0.1);
+    }
+    .footer a {
+        color: #a100ff;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    .footer a:hover {
+        text-decoration: underline;
+    }
+    </style>
+    <div class="footer">
+        Developed by <a style="color:black" href="#">Shaishav Anand</a> @ <a style="color: #a100ff" href="https://www.accenture.com/in-en">Accenture</a> <span style="color:black">2025</span>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
