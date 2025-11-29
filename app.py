@@ -106,7 +106,7 @@ hide_st_style = """
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 st.sidebar.markdown("## ⚙️ Settings")
-st.image("logo.png", width=220)
+st.image("image.png", width=220)
 
 
 uploaded = st.file_uploader("Upload CSV", type="csv")
@@ -449,3 +449,4 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
