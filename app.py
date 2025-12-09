@@ -340,7 +340,7 @@ for name, fc in results.items():
     st.dataframe(disp.head(30))
     buf = io.StringIO()
     disp.to_csv(buf, index=False)
-    st.download_button(f"Download {display_name}", buf.getvalue(), f"{selected_store}_{selected_sku}_{display_name}.csv", "text/csv")
+    st.download_button(f" ➜] Download", buf.getvalue(), f"{selected_store}_{selected_sku}_{display_name}.csv", "text/csv")
 
 # ====== AI Insights Section ======
 if metrics and results:
@@ -453,5 +453,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
