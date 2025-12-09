@@ -330,13 +330,17 @@ if not metrics_df.empty:
     st.dataframe(metrics_df.set_index('model'))
 
 for name, fc in results.items():
-    st.subheader(name)
+    if name == "XGBoost":
+        display_name = "Dataset B"
+    else:
+        display_name = "Dataset A"
+    st.subheader(display_name)
     disp = fc.copy()
     disp['ds'] = make_display_dates(disp['ds'])
     st.dataframe(disp.head(30))
     buf = io.StringIO()
     disp.to_csv(buf, index=False)
-    st.download_button(f"Download {name}", buf.getvalue(), f"{selected_store}_{selected_sku}_{name}.csv", "text/csv")
+    st.download_button(f"Download {display_name}", buf.getvalue(), f"{selected_store}_{selected_sku}_{display_name}.csv", "text/csv")
 
 # ====== AI Insights Section ======
 if metrics and results:
