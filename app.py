@@ -77,11 +77,14 @@ hide_st_style = """
     width:70%;
     margin:auto;
     }
+    .st-emotion-cache-7czcpc > img{
+    margin-top:25px !important;
+    }
     .st-emotion-cache-uwwqev{
     margin-bottom:55px;
     }
     .st-emotion-cache-1j22a0y{
-    margin-top:26px !important;
+    margin-top:115px !important;
     }
     .st-emotion-cache-1ffuo7c{
     width:5% !important;
@@ -453,6 +456,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
