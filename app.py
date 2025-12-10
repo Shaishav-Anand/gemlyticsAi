@@ -109,7 +109,7 @@ hide_st_style = """
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 st.sidebar.markdown("## ⚙️ Settings")
-st.image("image.png", width=220)
+st.image("logo.png", width=220)
 
 
 uploaded = st.file_uploader("Upload CSV", type="csv")
@@ -388,6 +388,49 @@ if user_query:
     st.markdown("### 🤖 Reply")
     st.write(ai_answer)
 
+# --- paste near your AI Insights / Chat section in dashboard.py ---
+from agentic_engine import run_agentic_task
+import json, pandas as pd
+
+st.subheader("🧠 Agentic AI (Autonomous Analysis)")
+
+agent_task_default = "Compare Prophet and XGBoost, pick the best model, compute demand growth vs last actuals, and give 6 action items."
+task_input = st.text_input("Agent Task", value=agent_task_default)
+
+run_agent_button = st.button("Run Agentic Analysis")
+
+if run_agent_button:
+    with st.spinner("Agent is thinking and may call tools..."):
+        # prepare actual time-series dataframe
+        # ts is your prepared ts dataframe in dashboard.py (it has 'ds','y', etc.)
+        try:
+            actual_serialized = ts[['ds','y']].copy().to_json(orient='split')
+        except Exception:
+            actual_serialized = pd.DataFrame(columns=['ds','y']).to_json(orient='split')
+
+        # prepare existing forecasts serialized as dictionary
+        forecasts_serialized = {}
+        for name, df in results.items():
+            try:
+                # results[name] is a DataFrame per your code
+                forecasts_serialized[name] = df[['ds','yhat']].to_json(orient='split')
+            except Exception:
+                forecasts_serialized[name] = {}
+
+        # call agent
+        agent_output = run_agentic_task(
+        prompt=task_input,
+        data=sku_df,  # full dataset
+        existing_forecasts=results.get('XGBoost'),  # or whichever model
+        metrics=metrics
+        )
+
+
+
+        # display
+        st.markdown("### Agent Result")
+        st.write(agent_output)
+
 
 
 if results:
@@ -456,7 +499,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 
 
 
