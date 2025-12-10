@@ -1,26 +1,30 @@
-# Web app & UI
-streamlit==1.28.0
+# --- Core Build Tools ---
+pip>=25.3
+setuptools>=70.0
+wheel>=0.43
 
-# Data manipulation
-pandas==2.2.1
-numpy==1.26.2
+# --- Web App ---
+streamlit==1.29.0
 
-# Plotting
-matplotlib==3.8.0
-
-# Machine learning models
+# --- Data Science ---
+pandas==2.1.4
+numpy==1.26.4
+matplotlib==3.8.2
 scikit-learn==1.3.2
+
+# --- Forecasting ---
+prophet==1.1.5
+pystan==2.19.1.1
+
+# --- ML Models ---
 xgboost==1.7.6
 
-# Time series forecasting
-prophet==1.1.4
-cmdstanpy==1.1.0  # Required backend for Prophet
+# --- AI / LLM ---
+groq==1.3.0
+langchain==0.2.11
+langchain-core==0.2.32
+langchain-community==0.2.10
 
-# AI API integration
-groq==0.1.35
-
-# LangChain for Agentic AI
-langchain==0.1.133
-
-# Environment variables
+# --- Utilities ---
 python-dotenv==1.0.1
+requests==2.31.0
