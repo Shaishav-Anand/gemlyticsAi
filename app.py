@@ -16,6 +16,18 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 import warnings
 warnings.filterwarnings("ignore")
 
+def is_agent_question(text: str) -> bool:
+    decision_keywords = [
+        "compare", "pick", "choose", "best", "decide",
+        "recommend", "analyze", "forecast", "model",
+        "risk", "action", "growth",
+        "trend", "trending", "up", "down"
+    ]
+    text = text.lower().strip()
+    return any(word in text for word in decision_keywords)
+
+
+
 def safe_metrics(y_true, y_pred):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
@@ -109,7 +121,7 @@ hide_st_style = """
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 st.sidebar.markdown("## ⚙️ Settings")
-st.image("image.png", width=220)
+st.image("logo.png", width=220)
 
 
 uploaded = st.file_uploader("Upload CSV", type="csv")
@@ -389,48 +401,61 @@ for name, fc in results.items():
 #     st.write(ai_answer)
 
 # --- paste near your AI Insights / Chat section in dashboard.py ---
+# from agentic_engine import run_agentic_task
+# import json, pandas as pd
+
 from agentic_engine import run_agentic_task
-import json, pandas as pd
 
-st.subheader("🧠 Autonomous Analysis ")
+st.subheader("🧠 Autonomous Analysis")
 
-agent_task_default = "Compare Prophet and XGBoost, pick the best model, compute demand growth vs last actuals, and give 6 action items."
-task_input = st.text_input("Agent Task", value=agent_task_default)
+agent_task_default = (
+    "Compare Prophet and XGBoost, pick the best model, "
+    "compute demand growth vs last actuals, and give 6 action items."
+)
 
-run_agent_button = st.button("Run Agentic Analysis")
+task_input = st.text_input("Ask something:", value=agent_task_default)
+run_agent_button = st.button("Run")
 
 if run_agent_button:
-    with st.spinner("Agent is thinking and may call tools..."):
-        # prepare actual time-series dataframe
-        # ts is your prepared ts dataframe in dashboard.py (it has 'ds','y', etc.)
-        try:
-            actual_serialized = ts[['ds','y']].copy().to_json(orient='split')
-        except Exception:
-            actual_serialized = pd.DataFrame(columns=['ds','y']).to_json(orient='split')
-
-        # prepare existing forecasts serialized as dictionary
-        forecasts_serialized = {}
-        for name, df in results.items():
-            try:
-                # results[name] is a DataFrame per your code
-                forecasts_serialized[name] = df[['ds','yhat']].to_json(orient='split')
-            except Exception:
-                forecasts_serialized[name] = {}
-
-        # call agent
-        agent_output = run_agentic_task(
-        prompt=task_input,
-        data=sku_df,  # full dataset
-        existing_forecasts=results.get('XGBoost'),  # or whichever model
-        metrics=metrics
-        )
+    # -------------------------
+    # 🤖 AGENT MODE
+    # -------------------------
+    if is_agent_question(task_input):
+        with st.spinner("Agent is autonomously analyzing..."):
+            agent_output = run_agentic_task(
+                prompt=task_input,
+                data=sku_df,
+                existing_forecasts=results.get(
+                    min(metrics, key=lambda m: metrics[m]["MAPE"])
+                    if metrics else "XGBoost"
+                ),
+                metrics=metrics
+            )
 
 
+            st.subheader("🤖 Agent Decision")
+            st.json(agent_output)
 
-        # display
-        st.markdown("### Agent Result")
-        st.write(agent_output)
+            st.subheader("🧠 Explanation")
+            st.write(agent_output.get("llm_explanation", "No explanation"))
 
+    # -------------------------
+    # 💬 CHAT MODE
+    # -------------------------
+    else:
+        with st.spinner("AI Assistant replying..."):
+            reply = chat_with_ai(
+                user_message=task_input,
+                context=f"""
+                Store: {selected_store}
+                SKU: {selected_sku}
+                Metrics: {metrics}
+                Available models: {list(results.keys())}
+                """
+            )
+
+            st.subheader("💬 Assistant")
+            st.write(reply)
 
 
 if results:
@@ -499,8 +524,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-
 
 
 
