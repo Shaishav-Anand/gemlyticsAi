@@ -26,6 +26,14 @@ def is_agent_question(text: str) -> bool:
     text = text.lower().strip()
     return any(word in text for word in decision_keywords)
 
+def rename_forecast_columns(df):
+    return df.rename(columns={
+        "ds": "Date",
+        "yhat": "Avg Demand",
+        "yhat_lower": "Min Expected Demand",
+        "yhat_upper": "Max Expected Demand"
+    })
+
 
 
 def safe_metrics(y_true, y_pred):
@@ -121,7 +129,7 @@ hide_st_style = """
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
 st.sidebar.markdown("## ⚙️ Settings")
-st.image("logo.png", width=220)
+st.image("image.png", width=220)
 
 
 uploaded = st.file_uploader("Upload CSV", type="csv")
@@ -352,10 +360,20 @@ for name, fc in results.items():
     st.subheader(display_name)
     disp = fc.copy()
     disp['ds'] = make_display_dates(disp['ds'])
+
+    disp = rename_forecast_columns(disp)
+
     st.dataframe(disp.head(30))
+
     buf = io.StringIO()
     disp.to_csv(buf, index=False)
-    st.download_button(f" ➜] Download", buf.getvalue(), f"{selected_store}_{selected_sku}_{display_name}.csv", "text/csv")
+    st.download_button(
+        " ➜ Download Forecast",
+        buf.getvalue(),
+        f"{selected_store}_{selected_sku}_{display_name}.csv",
+        "text/csv"
+    )
+
 
 # ====== AI Insights Section ======
 # if metrics and results:
