@@ -34,30 +34,39 @@ def _to_df(serialized):
         return pd.read_json(json.dumps(serialized), orient='split')
     return serialized
 
-def compare_models(metrics):
+def compare_models(metrics: dict):
     """
-    metrics: dict like {"Prophet": {...}, "XGBoost": {...}}
-    returns: name of best model by MAPE then RMSE then MAE
+    Select best model based on lowest MAPE, then RMSE, then MAE
     """
+
     if not metrics:
-        return {"best_model": None, "reason": "no metrics provided"}
-    best = None
-    # choose by MAPE primarily (lower is better)
-    def score(m):
-        v = metrics.get(m, {})
-        # protect missing keys
-        mape = float(v.get("MAPE") if v.get("MAPE") is not None else 1e9)
-        rmse = float(v.get("RMSE") if v.get("RMSE") is not None else 1e9)
-        mae  = float(v.get("MAE") if v.get("MAE") is not None else 1e9)
-        # score smaller -> better; prioritized tuple
-        return (mape, rmse, mae)
-    try:
-        names = list(metrics.keys())
-        names_sorted = sorted(names, key=lambda x: score(x))
-        best = names_sorted[0]
-        return {"best_model": best, "sorted": names_sorted}
-    except Exception as e:
-        return {"best_model": None, "error": str(e)}
+        return None, "no metrics provided"
+
+    # Filter valid models
+    valid = {
+        model: vals
+        for model, vals in metrics.items()
+        if vals and vals.get("MAPE") is not None
+    }
+
+    if not valid:
+        return None, "no valid metrics"
+
+    # Sort by MAPE → RMSE → MAE
+    sorted_models = sorted(
+        valid.items(),
+        key=lambda x: (
+            x[1].get("MAPE", float("inf")),
+            x[1].get("RMSE", float("inf")),
+            x[1].get("MAE", float("inf"))
+        )
+    )
+
+    best_model = sorted_models[0][0]
+    reason = "lowest MAPE (primary), RMSE & MAE (secondary)"
+
+    return best_model, reason
+
 
 def compute_growth_from_forecast(forecast_serialized):
     """
@@ -76,27 +85,55 @@ def compute_growth_from_forecast(forecast_serialized):
         pct = ((final - initial) / initial) * 100
     return {"initial": initial, "final": final, "pct_growth": pct}
 
-def compute_growth_against_actuals(actual_serialized, forecast_serialized):
+def compute_trend_direction(actual_df, window=14):
     """
-    Compares the mean of the last N actuals to the mean of forecasted period.
-    returns percent growth forecast vs last_actual_avg
+    Compare recent average vs previous average
     """
-    actual = _to_df(actual_serialized)
-    forecast = _to_df(forecast_serialized)
-    if actual.empty or forecast.empty:
-        return {"error": "missing actuals or forecasts"}
-    # use last len(forecast) actual rows as baseline (or as many as available)
-    n = len(forecast)
-    last_actual = actual.sort_values('ds').tail(n)
-    if last_actual.empty:
-        return {"error": "no recent actuals to compare"}
-    last_avg = float(last_actual['y'].mean())
-    fc_avg = float(forecast['yhat'].mean())
-    if last_avg == 0:
-        pct = None
+    if actual_df is None or len(actual_df) < window * 2:
+        return None, "Insufficient data for trend analysis"
+
+    recent = actual_df['y'].tail(window).mean()
+    previous = actual_df['y'].iloc[-2*window:-window].mean()
+
+    if previous == 0:
+        return None, "Previous demand is zero"
+
+    change_pct = ((recent - previous) / previous) * 100
+
+    if change_pct > 5:
+        return "UP", f"Demand increased by {round(change_pct,2)}%"
+    elif change_pct < -5:
+        return "DOWN", f"Demand decreased by {round(abs(change_pct),2)}%"
     else:
-        pct = ((fc_avg - last_avg) / last_avg) * 100
-    return {"last_actual_avg": last_avg, "forecast_avg": fc_avg, "pct_vs_actuals": pct}
+        return "FLAT", "Demand is stable"
+
+
+def compute_growth_against_actuals(actual_df, forecast_df):
+    """
+    Compute % growth of forecast vs recent actuals.
+
+    actual_df: DataFrame with columns ['ds', 'y']
+    forecast_df: DataFrame with column ['yhat']
+    """
+
+    if actual_df is None or forecast_df is None:
+        return 0.0
+
+    if actual_df.empty or forecast_df.empty:
+        return 0.0
+
+    # Use last 7 actual points (or fewer if not available)
+    recent_actuals = actual_df['y'].tail(7).mean()
+
+    # Use full forecast average
+    forecast_avg = forecast_df['yhat'].mean()
+
+    if recent_actuals == 0:
+        return 0.0
+
+    growth_pct = ((forecast_avg - recent_actuals) / recent_actuals) * 100
+    return round(float(growth_pct), 2)
+
 
 def run_prophet_on_serialized(df_serialized, forecast_horizon=30, add_price_reg=False, add_prom_reg=False, freq='D'):
     """
@@ -182,3 +219,28 @@ def run_xgboost_on_serialized(df_serialized, forecast_horizon=30, freq='D'):
         'yhat_upper': (y_pred + std).astype(int)
     })
     return out.to_json(orient='split')
+
+
+def compute_trend_direction(actual_df, window=14):
+    """
+    Determine demand trend using recent vs previous window averages
+    """
+    if actual_df is None or len(actual_df) < window * 2:
+        return None, "Insufficient data for trend analysis"
+
+    actual_df = actual_df.sort_values("ds")
+
+    recent = actual_df["y"].tail(window).mean()
+    previous = actual_df["y"].iloc[-2*window:-window].mean()
+
+    if previous == 0:
+        return None, "Previous demand is zero"
+
+    change_pct = ((recent - previous) / previous) * 100
+
+    if change_pct > 5:
+        return "UP", f"Demand increased by {round(change_pct, 2)}%"
+    elif change_pct < -5:
+        return "DOWN", f"Demand decreased by {round(abs(change_pct), 2)}%"
+    else:
+        return "FLAT", "Demand is stable"
