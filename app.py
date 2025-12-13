@@ -346,53 +346,53 @@ for name, fc in results.items():
     st.download_button(f" ➜] Download", buf.getvalue(), f"{selected_store}_{selected_sku}_{display_name}.csv", "text/csv")
 
 # ====== AI Insights Section ======
-if metrics and results:
-    st.subheader("🤖 AI Analytics")
+# if metrics and results:
+#     st.subheader("🤖 AI Analytics")
 
-    try:
-        # Convert metrics + results to readable text
-        metrics_text = "\n".join([f"{m}: {v}" for m, v in metrics.items()])
-        results_text = "\n".join([f"{name}: {df.head().to_dict()}" for name, df in results.items()])
+#     try:
+#         # Convert metrics + results to readable text
+#         metrics_text = "\n".join([f"{m}: {v}" for m, v in metrics.items()])
+#         results_text = "\n".join([f"{name}: {df.head().to_dict()}" for name, df in results.items()])
 
-        insights = generate_insights(metrics_text, results_text, selected_sku, selected_store)
+#         insights = generate_insights(metrics_text, results_text, selected_sku, selected_store)
 
-        st.success(insights)
+#         st.success(insights)
 
-    except Exception as e:
-        st.error(f"AI Insights Error: {e}")
+#     except Exception as e:
+#         st.error(f"AI Insights Error: {e}")
 
 
-# ----------------------------------------
-# 💬 CHAT SYSTEM (GROQ AI)
-# ----------------------------------------
-st.subheader("💬 Chat with AI Assistant")
+# # ----------------------------------------
+# # 💬 CHAT SYSTEM (GROQ AI)
+# # ----------------------------------------
+# st.subheader("💬 Chat with AI Assistant")
 
-chat_context = f"""
-Store: {selected_store}
-SKU: {selected_sku}
+# chat_context = f"""
+# Store: {selected_store}
+# SKU: {selected_sku}
 
-Metrics:
-{metrics}
+# Metrics:
+# {metrics}
 
-Insights:
-{insights if 'insights' in locals() else ""}
+# Insights:
+# {insights if 'insights' in locals() else ""}
 
-Available Models:
-{list(results.keys())}
-"""
+# Available Models:
+# {list(results.keys())}
+# """
 
-user_query = st.text_input("Ask anything about your data, forecast, trends, risks, promotions, or pricing:")
+# user_query = st.text_input("Ask anything about your data, forecast, trends, risks, promotions, or pricing:")
 
-if user_query:
-    ai_answer = chat_with_ai(user_query, context=chat_context)
-    st.markdown("### 🤖 Reply")
-    st.write(ai_answer)
+# if user_query:
+#     ai_answer = chat_with_ai(user_query, context=chat_context)
+#     st.markdown("### 🤖 Reply")
+#     st.write(ai_answer)
 
 # --- paste near your AI Insights / Chat section in dashboard.py ---
 from agentic_engine import run_agentic_task
 import json, pandas as pd
 
-st.subheader("🧠 Agentic AI (Autonomous Analysis)")
+st.subheader("🧠 Autonomous Analysis ")
 
 agent_task_default = "Compare Prophet and XGBoost, pick the best model, compute demand growth vs last actuals, and give 6 action items."
 task_input = st.text_input("Agent Task", value=agent_task_default)
@@ -499,6 +499,7 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
 
 
 
