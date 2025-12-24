@@ -17,15 +17,15 @@ from agent_tools import (
 # LLM (EXPLANATION ONLY)
 # --------------------------------------------------
 
-from dotenv import load_dotenv
-load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
-# Load API key from .env
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-if not GROQ_API_KEY:
-    raise EnvironmentError("Set GROQ_API_KEY environment variable before running.")
+# # Load API key from .env
+# GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+# if not GROQ_API_KEY:
+#     raise EnvironmentError("Set GROQ_API_KEY environment variable before running.")
 
-client = Groq(api_key=GROQ_API_KEY)
+# client = Groq(api_key=GROQ_API_KEY)
 
 
 # --------------------------------------------------
