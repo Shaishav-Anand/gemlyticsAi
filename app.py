@@ -1,4 +1,4 @@
-# =========================================================
+ture# =========================================================
 # Datalytics AI — Store-Level Autonomous Decision System
 # =========================================================
 
@@ -370,8 +370,9 @@ if st.button("Run Store Analysis"):
 st.markdown(
     """
     <div style="text-align:center;color:#555;padding:10px;">
-        Developed by <b>Shaishav Anand</b> • 2025
+        Developed by <b>Shaishav Anand</b> • Accenture • © Copyright 2026 
     </div>
     """,
     unsafe_allow_html=True
 )
+
